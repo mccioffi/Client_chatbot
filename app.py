@@ -4,7 +4,7 @@ import json
 import anthropic
 import random
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Claude API configuration
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
@@ -13,12 +13,7 @@ PERSONALITIES_DIR = "personalities"
 @app.route('/')
 def index():
     """Serve the main HTML file"""
-    return send_from_directory('.', 'index.html')
-
-@app.route('/<path:filename>')
-def static_files(filename):
-    """Serve static files (CSS, JS, etc.)"""
-    return send_from_directory('.', filename)
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/api/personalities')
 def get_personalities():
