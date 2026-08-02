@@ -3,12 +3,14 @@ import os
 import json
 import anthropic
 import random
+from decouple import config
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Claude API configuration
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
 PERSONALITIES_DIR = "personalities"
+FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
 
 @app.route('/')
 def index():
@@ -209,4 +211,4 @@ def health_check():
 if __name__ == '__main__':
     # For local development
     port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=FLASK_DEBUG)
