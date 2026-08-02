@@ -20,4 +20,4 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
 # Run the application
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8000", "--workers", "1", "--timeout", "120"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--worker-class", "gthread", "--timeout", "120"]

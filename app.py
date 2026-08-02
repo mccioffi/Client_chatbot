@@ -117,7 +117,7 @@ def claude_proxy():
             return jsonify({'error': {'message': 'API key is required'}}), 400
         
         # Initialize Anthropic client with the provided API key
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=45.0)
         
         # Extract message data
         messages = data.get('messages', [])

@@ -81,6 +81,13 @@ Open your browser and go to `http://localhost:8000`
    - Create a new "App Service"
    - Choose Python 3.11 runtime
    - Select your subscription and resource group
+   - **Plan tier:** for a short-lived class deployment (a few dozen students
+     connecting independently, not all at once), **Basic B1** is the
+     recommended starting point — cheap (~$13/month) and supports "Always
+     On," which avoids cold-start delays after idle periods. The Free F1
+     tier saves that cost but caps CPU usage at 60 min/day with no Always
+     On, which risks locking out students if the quota is hit; only use it
+     if you're comfortable upgrading mid-course should that happen.
 
 3. **Deploy from GitHub:**
    - In App Service → Deployment Center
