@@ -86,27 +86,17 @@
         </div>
     </div>
 
-    <!-- API Key Modal -->
-    <div id="apiKeyModal" class="modal">
+    <!-- Access Code Modal -->
+    <div id="accessCodeModal" class="modal">
         <div class="modal-content">
-            <h2>Claude API Configuration</h2>
-            <p>Please enter your Claude API key to start chatting:</p>
-            <input type="password" id="apiKeyInput" placeholder="Enter your Claude API key">
+            <h2>Enter Access Code</h2>
+            <p>Please enter the access code your instructor gave you to start chatting:</p>
+            <input type="text" id="accessCodeInput" placeholder="Enter your access code">
             <div class="modal-actions">
-                <button id="saveApiKey" class="btn-primary">Save & Start Chatting</button>
+                <button id="saveAccessCode" class="btn-primary">Save & Start Chatting</button>
             </div>
             <div class="api-info">
-                <details>
-                    <summary><strong>How to get your API key</strong></summary>
-                    <ol>
-                        <li>Go to <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></li>
-                        <li>Sign up or log in to your account</li>
-                        <li>Navigate to "API Keys" in your dashboard</li>
-                        <li>Create a new API key</li>
-                        <li>Copy and paste it here</li>
-                    </ol>
-                </details>
-                <p><small>Your data, including the API key, is stored locally in your browser and never sent anywhere except to Claude's API.</small></p>
+                <p><small>Your access code is stored locally in your browser and sent only to this app's server to authenticate your session. The access code is not personally identifying.</small></p>
             </div>
         </div>
     </div>

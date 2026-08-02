@@ -1,6 +1,6 @@
 class ChatBot {
     constructor() {
-        this.apiKey = localStorage.getItem('claude_api_key');
+        this.accessCode = localStorage.getItem('access_code');
         this.currentPersonality = null;
         this.personalities = [];
         this.conversationHistory = [];
@@ -13,7 +13,7 @@ class ChatBot {
         this.initializeElements();
         this.loadConfig();
         this.loadPersonalities();
-        this.checkApiKey();
+        this.checkAccessCode();
         this.setupEventListeners();
         this.setInitialTime();
     }
@@ -34,9 +34,9 @@ class ChatBot {
         this.personalityModal = document.getElementById('personalityModal');
         this.personalityList = document.getElementById('personalityList');
         this.cancelPersonalityButton = document.getElementById('cancelPersonality');
-        this.apiKeyModal = document.getElementById('apiKeyModal');
-        this.apiKeyInput = document.getElementById('apiKeyInput');
-        this.saveApiKeyButton = document.getElementById('saveApiKey');
+        this.accessCodeModal = document.getElementById('accessCodeModal');
+        this.accessCodeInput = document.getElementById('accessCodeInput');
+        this.saveAccessCodeButton = document.getElementById('saveAccessCode');
     }
 
     async loadConfig() {
@@ -144,18 +144,18 @@ class ChatBot {
         }
     }
 
-    checkApiKey() {
-        if (!this.apiKey) {
-            this.showApiKeyModal();
+    checkAccessCode() {
+        if (!this.accessCode) {
+            this.showAccessCodeModal();
         }
     }
 
-    showApiKeyModal() {
-        this.apiKeyModal.style.display = 'block';
+    showAccessCodeModal() {
+        this.accessCodeModal.style.display = 'block';
     }
 
-    hideApiKeyModal() {
-        this.apiKeyModal.style.display = 'none';
+    hideAccessCodeModal() {
+        this.accessCodeModal.style.display = 'none';
     }
 
     setupEventListeners() {
@@ -192,20 +192,20 @@ class ChatBot {
         this.selectPersonalityButton.addEventListener('click', () => this.showPersonalityModal());
         this.cancelPersonalityButton.addEventListener('click', () => this.hidePersonalityModal());
 
-        // API key modal
-        this.saveApiKeyButton.addEventListener('click', () => this.saveApiKey());
-        this.apiKeyInput.addEventListener('keypress', (e) => {
+        // Access code modal
+        this.saveAccessCodeButton.addEventListener('click', () => this.saveAccessCode());
+        this.accessCodeInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                this.saveApiKey();
+                this.saveAccessCode();
             }
         });
 
         // Modal click outside to close
-        this.apiKeyModal.addEventListener('click', (e) => {
-            if (e.target === this.apiKeyModal) {
-                // Don't allow closing without API key
-                if (this.apiKey) {
-                    this.hideApiKeyModal();
+        this.accessCodeModal.addEventListener('click', (e) => {
+            if (e.target === this.accessCodeModal) {
+                // Don't allow closing without an access code
+                if (this.accessCode) {
+                    this.hideAccessCodeModal();
                 }
             }
         });
@@ -224,22 +224,17 @@ class ChatBot {
         }
     }
 
-    saveApiKey() {
-        const apiKey = this.apiKeyInput.value.trim();
-        
-        if (!apiKey) {
-            this.showError('Please enter a valid API key.');
+    saveAccessCode() {
+        const accessCode = this.accessCodeInput.value.trim();
+
+        if (!accessCode) {
+            this.showError('Please enter your access code.');
             return;
         }
 
-        if (!apiKey.startsWith('sk-ant-')) {
-            this.showError('Invalid API key format. Claude API keys should start with "sk-ant-".');
-            return;
-        }
-
-        this.apiKey = apiKey;
-        localStorage.setItem('claude_api_key', apiKey);
-        this.hideApiKeyModal();
+        this.accessCode = accessCode;
+        localStorage.setItem('access_code', accessCode);
+        this.hideAccessCodeModal();
         this.updateStatus('Online');
         
         // Clear any existing error
@@ -254,14 +249,14 @@ class ChatBot {
         errorDiv.className = 'error-message';
         errorDiv.textContent = message;
         
-        this.apiKeyModal.querySelector('.modal-content').insertBefore(
+        this.accessCodeModal.querySelector('.modal-content').insertBefore(
             errorDiv, 
-            this.apiKeyModal.querySelector('.modal-actions')
+            this.accessCodeModal.querySelector('.modal-actions')
         );
     }
 
     clearError() {
-        const existingError = this.apiKeyModal.querySelector('.error-message');
+        const existingError = this.accessCodeModal.querySelector('.error-message');
         if (existingError) {
             existingError.remove();
         }
@@ -276,8 +271,8 @@ class ChatBot {
         
         if (!message || this.isTyping) return;
         
-        if (!this.apiKey) {
-            this.showApiKeyModal();
+        if (!this.accessCode) {
+            this.showAccessCodeModal();
             return;
         }
 
@@ -464,7 +459,7 @@ class ChatBot {
             max_tokens: 1000,
             system: this.currentPersonality ? this.currentPersonality.personality : '',
             messages: messages,
-            api_key: this.apiKey,
+            access_code: this.accessCode,
             is_last_message: isLastMessage
         };
 
@@ -501,18 +496,20 @@ class ChatBot {
         
         let errorMessage = 'Sorry, I encountered an error. Please try again.';
         
-        if (error.message.includes('401') || error.message.includes('Invalid API key')) {
-            errorMessage = 'Invalid API key. Please check your Claude API key.';
-            // Clear stored API key and show modal
-            localStorage.removeItem('claude_api_key');
-            this.apiKey = null;
-            setTimeout(() => this.showApiKeyModal(), 1000);
+        if (error.message.includes('401')) {
+            errorMessage = 'Invalid access code. Please check the code your instructor provided.';
+            // Clear stored access code and show modal
+            localStorage.removeItem('access_code');
+            this.accessCode = null;
+            setTimeout(() => this.showAccessCodeModal(), 1000);
         } else if (error.message.includes('429')) {
             errorMessage = 'Too many requests. Please wait a moment and try again.';
         } else if (error.message.includes('400')) {
             errorMessage = 'Invalid request. Please try rephrasing your message.';
         } else if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
             errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('contact your instructor')) {
+            errorMessage = 'A server configuration issue occurred. Please contact your instructor.';
         } else if (error.message.includes('Server error')) {
             errorMessage = 'Server error occurred. Please try again in a moment.';
         }
@@ -522,7 +519,7 @@ class ChatBot {
         
         // Reset status after a delay
         setTimeout(() => {
-            if (this.apiKey) {
+            if (this.accessCode) {
                 this.updateStatus('Online');
             }
         }, 3000);
@@ -671,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Handle page visibility change to update status
 document.addEventListener('visibilitychange', () => {
     const status = document.getElementById('status');
-    if (status && localStorage.getItem('claude_api_key')) {
+    if (status && localStorage.getItem('access_code')) {
         if (document.hidden) {
             status.textContent = 'Away';
         } else {

@@ -11,6 +11,8 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
 PERSONALITIES_DIR = "personalities"
 FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
+ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')
+STUDENT_TOKENS = {token.strip() for token in config('STUDENT_TOKENS', default='').split(',') if token.strip()}
 
 @app.route('/')
 def index():
@@ -111,13 +113,13 @@ def claude_proxy():
         if not data:
             return jsonify({'error': {'message': 'No data provided'}}), 400
         
-        # Extract API key from request
-        api_key = data.get('api_key')
-        if not api_key:
-            return jsonify({'error': {'message': 'API key is required'}}), 400
-        
-        # Initialize Anthropic client with the provided API key
-        client = anthropic.Anthropic(api_key=api_key, timeout=45.0)
+        # Validate the student's access code (an opaque token, no personal data)
+        access_code = data.get('access_code')
+        if not access_code or access_code not in STUDENT_TOKENS:
+            return jsonify({'error': {'message': 'Invalid or missing access code', 'type': 'invalid_token'}}), 401
+
+        # Use the centrally configured Anthropic API key
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=45.0)
         
         # Extract message data
         messages = data.get('messages', [])
@@ -189,7 +191,7 @@ IMPORTANT GUIDELINES:
         return jsonify(response_data)
             
     except anthropic.AuthenticationError as e:
-        return jsonify({'error': {'message': 'Invalid API key', 'type': 'authentication_error'}}), 401
+        return jsonify({'error': {'message': 'Server configuration error - please contact your instructor', 'type': 'authentication_error'}}), 500
     except anthropic.PermissionDeniedError as e:
         return jsonify({'error': {'message': 'Permission denied', 'type': 'permission_error'}}), 403
     except anthropic.NotFoundError as e:
