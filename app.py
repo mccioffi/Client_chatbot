@@ -14,6 +14,28 @@ FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')
 STUDENT_TOKENS = {token.strip() for token in config('STUDENT_TOKENS', default='').split(',') if token.strip()}
 
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "img-src 'self' data:; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'"
+)
+
+@app.after_request
+def set_security_headers(response):
+    """Add cheap-insurance security headers to every response"""
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    response.headers['Content-Security-Policy'] = CONTENT_SECURITY_POLICY
+    return response
+
 @app.route('/')
 def index():
     """Serve the main HTML file"""

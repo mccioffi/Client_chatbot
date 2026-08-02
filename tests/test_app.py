@@ -19,6 +19,15 @@ def test_get_config(client):
     assert response.get_json() == {'model': app_module.CLAUDE_MODEL}
 
 
+def test_security_headers_present_on_every_response(client):
+    response = client.get('/health')
+    assert response.headers['X-Content-Type-Options'] == 'nosniff'
+    assert response.headers['X-Frame-Options'] == 'DENY'
+    assert response.headers['Strict-Transport-Security'].startswith('max-age=')
+    assert response.headers['Referrer-Policy'] == 'strict-origin-when-cross-origin'
+    assert "frame-ancestors 'none'" in response.headers['Content-Security-Policy']
+
+
 def test_get_personalities_list(client):
     response = client.get('/api/personalities')
     assert response.status_code == 200
