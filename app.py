@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
+import re
 import json
 import anthropic
 from decouple import config
@@ -8,10 +9,24 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Claude API configuration
 CLAUDE_MODEL = config('CLAUDE_MODEL', default='claude-sonnet-4-20250514')
+MAX_RESPONSE_TOKENS = 1000
 PERSONALITIES_DIR = "personalities"
+PERSONALITY_ID_PATTERN = re.compile(r'^[\w-]+$')
 FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')
 STUDENT_TOKENS = {token.strip() for token in config('STUDENT_TOKENS', default='').split(',') if token.strip()}
+
+
+def load_personality(personality_id):
+    """Load a personality JSON file by id, or None if unknown/invalid"""
+    if not personality_id or not PERSONALITY_ID_PATTERN.match(personality_id):
+        return None
+    personalities_path = os.path.join(os.path.dirname(__file__), PERSONALITIES_DIR)
+    filepath = os.path.join(personalities_path, f"{personality_id}.json")
+    if not os.path.exists(filepath):
+        return None
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
@@ -73,23 +88,13 @@ def get_personalities():
 def get_personality(personality_id):
     """Get a specific personality by ID"""
     try:
-        personalities_path = os.path.join(os.path.dirname(__file__), PERSONALITIES_DIR)
-        filepath = os.path.join(personalities_path, f"{personality_id}.json")
-        
-        if not os.path.exists(filepath):
+        personality_data = load_personality(personality_id)
+        if personality_data is None:
             return jsonify({'error': {'message': 'Personality not found'}}), 404
-        
-        with open(filepath, 'r', encoding='utf-8') as f:
-            personality_data = json.load(f)
-        
+
         return jsonify(personality_data)
     except Exception as e:
         return jsonify({'error': {'message': f'Failed to load personality: {str(e)}'}}), 500
-
-@app.route('/api/config')
-def get_config():
-    """Get configuration settings including Claude model"""
-    return jsonify({'model': CLAUDE_MODEL})
 
 @app.route('/api/claude', methods=['POST'])
 def claude_proxy():
@@ -106,21 +111,28 @@ def claude_proxy():
         if not access_code or access_code not in STUDENT_TOKENS:
             return jsonify({'error': {'message': 'Invalid or missing access code', 'type': 'invalid_token'}}), 401
 
+        # Look up the personality server-side - never trust a client-supplied system prompt
+        personality_data = load_personality(data.get('personality_id'))
+        if personality_data is None:
+            return jsonify({'error': {'message': 'Invalid or missing personality_id'}}), 400
+        system_prompt = personality_data.get('personality', '')
+
+        # Extract and validate the conversation
+        messages = data.get('messages', [])
+        if not isinstance(messages, list) or not messages:
+            return jsonify({'error': {'message': 'Messages are required'}}), 400
+        if not all(
+            isinstance(m, dict) and m.get('role') in ('user', 'assistant') and isinstance(m.get('content'), str)
+            for m in messages
+        ):
+            return jsonify({'error': {'message': 'Invalid message format'}}), 400
+
         # Use the centrally configured Anthropic API key
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=45.0)
-        
-        # Extract message data
-        messages = data.get('messages', [])
-        system_prompt = data.get('system', '')
-        max_tokens = data.get('max_tokens', 1000)
-        model = data.get('model', CLAUDE_MODEL)
-        
-        if not messages:
-            return jsonify({'error': {'message': 'Messages are required'}}), 400
-        
+
         # Check if this is the last message in the session
         is_last_message = data.get('is_last_message', False)
-        
+
         # Enhance system prompt with conversation context
         enhanced_system_prompt = f"""You are participating in a Cognitive Behavioral Therapy (CBT) training simulation. Your role is to authentically portray a client in a therapy session, allowing trainee therapists to practice their therapeutic skills.
 
@@ -138,11 +150,11 @@ IMPORTANT GUIDELINES:
         # Add session ending instruction if this is the last message
         if is_last_message:
             enhanced_system_prompt += """\n\nSESSION ENDING: This is the final message of the session. You must now politely indicate that you need to leave. Apologize briefly and mention that your time is up or you have another commitment. Keep it natural and brief (1-2 sentences). For example: "I'm sorry, but I need to go now - my time is up." or "I appreciate talking with you, but I have to leave now." """
-        
-        # Make request to Claude API using the anthropic client
+
+        # model and max_tokens are always server-controlled, never taken from the request body
         response = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
+            model=CLAUDE_MODEL,
+            max_tokens=MAX_RESPONSE_TOKENS,
             system=enhanced_system_prompt,
             messages=messages
         )

@@ -2,16 +2,15 @@ class ChatBot {
     constructor() {
         this.accessCode = localStorage.getItem('access_code');
         this.currentPersonality = null;
+        this.currentPersonalityId = null;
         this.personalities = [];
         this.conversationHistory = [];
         this.isTyping = false;
-        this.claudeModel = null; // Will be loaded from backend
         this.maxMessages = 30; // Maximum therapist messages per session
         this.therapistMessageCount = 0; // Track therapist messages only
         this.warningShown = false; // Track if 5-message warning shown
-        
+
         this.initializeElements();
-        this.loadConfig();
         this.loadPersonalities();
         this.checkAccessCode();
         this.setupEventListeners();
@@ -37,17 +36,6 @@ class ChatBot {
         this.accessCodeModal = document.getElementById('accessCodeModal');
         this.accessCodeInput = document.getElementById('accessCodeInput');
         this.saveAccessCodeButton = document.getElementById('saveAccessCode');
-    }
-
-    async loadConfig() {
-        try {
-            const response = await fetch('/api/config');
-            const data = await response.json();
-            this.claudeModel = data.model || 'claude-sonnet-4-20250514';
-        } catch (error) {
-            console.error('Failed to load config:', error);
-            this.claudeModel = 'claude-sonnet-4-20250514'; // Fallback
-        }
     }
 
     async loadPersonalities() {
@@ -88,8 +76,9 @@ class ChatBot {
         try {
             const response = await fetch(`/api/personality/${personalityId}`);
             const personalityData = await response.json();
-            
+
             this.currentPersonality = personalityData;
+            this.currentPersonalityId = personalityId;
             this.updateUIForPersonality();
             this.hidePersonalityModal();
             this.clearChatForNewPersonality();
@@ -448,11 +437,10 @@ class ChatBot {
             content: userMessage
         });
 
-        // Prepare the API request
+        // Prepare the API request. The model, max_tokens, and system prompt are
+        // determined server-side from personality_id - the client can't override them.
         const requestBody = {
-            model: this.claudeModel,
-            max_tokens: 1000,
-            system: this.currentPersonality ? this.currentPersonality.personality : '',
+            personality_id: this.currentPersonalityId,
             messages: messages,
             access_code: this.accessCode,
             is_last_message: isLastMessage

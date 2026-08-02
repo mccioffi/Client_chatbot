@@ -295,6 +295,10 @@ This application is specifically designed for **undergraduate psychology educati
 - **Student Authentication**: Each student uses an opaque access code
   (`STUDENT_TOKENS`) checked against a server-side allow-list — no names,
   emails, or other personal data are ever collected or sent to the server
+- **Locked-down Claude calls**: the model, response length, and system
+  prompt are always server-controlled constants/lookups (never taken from
+  the request), so a valid access code only grants access to the defined
+  CBT personalities — not an arbitrary prompt against the shared key
 - **Session Data**: Not stored permanently, exists only during active sessions
 - **Educational Compliance**: Designed for educational use, not real therapy
 - **No Personal Data**: Simulated clients only, no real patient information

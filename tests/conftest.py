@@ -18,3 +18,10 @@ def client():
     app_module.app.config['TESTING'] = True
     with app_module.app.test_client() as test_client:
         yield test_client
+
+
+@pytest.fixture
+def valid_personality_id():
+    personalities_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'personalities')
+    filename = sorted(f for f in os.listdir(personalities_path) if f.endswith('.json'))[0]
+    return filename[:-5]
