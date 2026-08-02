@@ -210,7 +210,7 @@ def health_check():
     """Health check endpoint for Azure"""
     return jsonify({'status': 'healthy', 'service': 'claude-chatbot'})
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     # For local development
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=FLASK_DEBUG)
