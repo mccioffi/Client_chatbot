@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
-import re
 import json
 import anthropic
 from decouple import config
@@ -11,22 +10,46 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 CLAUDE_MODEL = config('CLAUDE_MODEL', default='claude-sonnet-4-20250514')
 MAX_RESPONSE_TOKENS = 1000
 PERSONALITIES_DIR = "personalities"
-PERSONALITY_ID_PATTERN = re.compile(r'^[\w-]+$')
 FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')
 STUDENT_TOKENS = {token.strip() for token in config('STUDENT_TOKENS', default='').split(',') if token.strip()}
 
 
-def load_personality(personality_id):
-    """Load a personality JSON file by id, or None if unknown/invalid"""
-    if not personality_id or not PERSONALITY_ID_PATTERN.match(personality_id):
-        return None
+def _load_all_personalities():
+    """Read every personality JSON file once at startup, keyed by id.
+
+    Adding/editing a personality requires a restart to take effect - accepted
+    tradeoff for a plain in-memory dict with no per-request file I/O. A
+    malformed file fails startup loudly rather than silently vanishing from
+    the roster; tests/test_personalities.py already guards this in CI.
+    """
     personalities_path = os.path.join(os.path.dirname(__file__), PERSONALITIES_DIR)
-    filepath = os.path.join(personalities_path, f"{personality_id}.json")
-    if not os.path.exists(filepath):
-        return None
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    personalities = {}
+    for filename in os.listdir(personalities_path):
+        if filename.endswith('.json'):
+            filepath = os.path.join(personalities_path, filename)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                personalities[filename[:-5]] = json.load(f)
+    return personalities
+
+
+PERSONALITIES = _load_all_personalities()
+
+PERSONALITIES_SUMMARY = [
+    {
+        'id': personality_id,
+        'name': data.get('name', 'Unknown'),
+        'condition': data.get('condition', 'Unknown'),
+        'age': data.get('age', 'Unknown'),
+        'background': data.get('background', '')
+    }
+    for personality_id, data in PERSONALITIES.items()
+]
+
+
+def load_personality(personality_id):
+    """Look up a preloaded personality by id, or None if unknown"""
+    return PERSONALITIES.get(personality_id)
 
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
@@ -58,43 +81,16 @@ def index():
 @app.route('/api/personalities')
 def get_personalities():
     """Get list of available personalities"""
-    try:
-        personalities = []
-        personalities_path = os.path.join(os.path.dirname(__file__), PERSONALITIES_DIR)
-        
-        if os.path.exists(personalities_path):
-            for filename in os.listdir(personalities_path):
-                if filename.endswith('.json'):
-                    filepath = os.path.join(personalities_path, filename)
-                    try:
-                        with open(filepath, 'r', encoding='utf-8') as f:
-                            personality_data = json.load(f)
-                            personalities.append({
-                                'id': filename[:-5],  # Remove .json extension
-                                'name': personality_data.get('name', 'Unknown'),
-                                'condition': personality_data.get('condition', 'Unknown'),
-                                'age': personality_data.get('age', 'Unknown'),
-                                'background': personality_data.get('background', '')
-                            })
-                    except Exception as e:
-                        print(f"Error loading personality file {filename}: {e}")
-                        continue
-        
-        return jsonify({'personalities': personalities})
-    except Exception as e:
-        return jsonify({'error': {'message': f'Failed to load personalities: {str(e)}'}}), 500
+    return jsonify({'personalities': PERSONALITIES_SUMMARY})
 
 @app.route('/api/personality/<personality_id>')
 def get_personality(personality_id):
     """Get a specific personality by ID"""
-    try:
-        personality_data = load_personality(personality_id)
-        if personality_data is None:
-            return jsonify({'error': {'message': 'Personality not found'}}), 404
+    personality_data = load_personality(personality_id)
+    if personality_data is None:
+        return jsonify({'error': {'message': 'Personality not found'}}), 404
 
-        return jsonify(personality_data)
-    except Exception as e:
-        return jsonify({'error': {'message': f'Failed to load personality: {str(e)}'}}), 500
+    return jsonify(personality_data)
 
 @app.route('/api/claude', methods=['POST'])
 def claude_proxy():

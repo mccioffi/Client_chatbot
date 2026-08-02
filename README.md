@@ -137,13 +137,17 @@ of a `.env` file.
    its own list, so lines should be in character for that condition
 2. **One is picked at random client-side** each time a session starts with
    that client (no server round-trip, no API cost)
-3. **No code changes needed** - updates take effect immediately
+3. **Restart the application** - personality files are loaded once at
+   startup, so edits need a restart to take effect (no code changes needed
+   otherwise)
 
 ### Modifying Client Presentations
 
 1. **Edit JSON files** in the `personalities/` directory
 2. **Update the `personality` field** to modify AI behavior
 3. **Adjust `background` and `condition`** for different scenarios
+4. **Restart the application** - personality files are loaded once at
+   startup, so edits need a restart to take effect
 
 #### Option B: Azure Container Instances (Advanced)
 

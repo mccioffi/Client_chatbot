@@ -22,6 +22,4 @@ def client():
 
 @pytest.fixture
 def valid_personality_id():
-    personalities_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'personalities')
-    filename = sorted(f for f in os.listdir(personalities_path) if f.endswith('.json'))[0]
-    return filename[:-5]
+    return sorted(app_module.PERSONALITIES)[0]
