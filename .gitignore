@@ -115,6 +115,10 @@ local.settings.json
 
 # Local development files
 *.local
+*.local.md
 
 # VS Code
 .vscode/
+examples/*
+.idea
+personalities/scripts/*.md

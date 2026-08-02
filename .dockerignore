@@ -1,0 +1,14 @@
+.git/
+.github/
+.idea/
+.vscode/
+.mypy_cache/
+__pycache__/
+*.pyc
+venv/
+env/
+README.md
+
+# Local secrets / dev-only files (see CLAUDE.local.md)
+*.local
+CLAUDE.local.md
