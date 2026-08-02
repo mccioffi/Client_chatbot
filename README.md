@@ -121,6 +121,10 @@ of a `.env` file.
   "condition": "Mental Health Condition",
   "age": 25,
   "background": "Brief background description",
+  "opening_lines": [
+    "First thing the client might say when the session starts...",
+    "An alternative opening, in character..."
+  ],
   "personality": "Detailed personality prompt for AI..."
 }
 ```
@@ -129,8 +133,10 @@ of a `.env` file.
 
 ### Customizing Initial Messages
 
-1. **Edit `start_messages.txt`** - add one message per line
-2. **Messages are randomly selected** when clients begin sessions
+1. **Edit the `opening_lines` array** in a client's JSON file — each client has
+   its own list, so lines should be in character for that condition
+2. **One is picked at random client-side** each time a session starts with
+   that client (no server round-trip, no API cost)
 3. **No code changes needed** - updates take effect immediately
 
 ### Modifying Client Presentations
@@ -151,14 +157,20 @@ of a `.env` file.
 Client_chatbot/
 ├── app.py                          # Main Flask application
 ├── main.py                         # Azure entry point
-├── requirements.txt                # Python dependencies
+├── requirements.txt                # Python dependencies (pinned)
+├── requirements-test.txt           # Test-only dependencies (pytest etc.)
 ├── runtime.txt                     # Python version for Azure
 ├── Procfile                        # Process configuration
-├── index.html                      # CBT training interface
-├── script.js                       # Frontend JavaScript
-├── styles.css                      # Professional styling
-├── start_messages.txt              # Random client opening messages
+├── pytest.ini                      # Test discovery config
+├── generate_tokens.py              # Generates student access codes
+├── .env.example                    # Template for local secrets
+├── static/                         # Only files servable over HTTP
+│   ├── index.html                  # CBT training interface
+│   ├── script.js                   # Frontend JavaScript
+│   └── styles.css                  # Professional styling
 ├── personalities/                  # Client personality definitions
+│   └── *.json                      # name/condition/opening_lines/personality per client
+├── tests/                          # pytest suite
 ├── .gitignore                      # Git ignore rules
 └── README.md                       # This file
 ```
@@ -167,8 +179,7 @@ Client_chatbot/
 
 - `GET /` - Serves the main application
 - `GET /api/personalities` - Lists available clients
-- `GET /api/personality/<id>` - Gets specific client details
-- `GET /api/start-message` - Returns random opening message
+- `GET /api/personality/<id>` - Gets specific client details (including `opening_lines`)
 - `POST /api/claude` - Proxies requests to Claude API
 - `GET /health` - Health check for monitoring
 
@@ -213,13 +224,11 @@ Client_chatbot/
      [Anthropic console](https://console.anthropic.com/)
    - Ensure the account has sufficient API credits
 
-4. **Client personalities not loading:**
-   - Check that all JSON files in `personalities/` directory are valid
+4. **Client personalities not loading, or a client has no opening message:**
+   - Check that all JSON files in `personalities/` directory are valid and
+     include a non-empty `opening_lines` array
    - Verify file permissions for the personalities directory
-
-5. **Start messages not working:**
-   - Ensure `start_messages.txt` exists and has content
-   - Check that file contains one message per line
+   - Run `pytest` — `tests/test_personalities.py` validates this automatically
 
 ### Development Issues
 

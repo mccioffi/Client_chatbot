@@ -4,7 +4,7 @@ import os
 import pytest
 
 PERSONALITIES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'personalities')
-REQUIRED_FIELDS = {'name', 'condition', 'age', 'background', 'personality'}
+REQUIRED_FIELDS = {'name', 'condition', 'age', 'background', 'personality', 'opening_lines'}
 
 
 def personality_files():
@@ -32,6 +32,11 @@ def test_personality_file_has_required_fields(filename):
     assert isinstance(data['age'], int)
     assert isinstance(data['background'], str) and data['background']
     assert isinstance(data['personality'], str) and data['personality']
+
+    opening_lines = data['opening_lines']
+    assert isinstance(opening_lines, list) and len(opening_lines) > 0
+    for line in opening_lines:
+        assert isinstance(line, str) and line
 
 
 def test_at_least_one_personality_exists():

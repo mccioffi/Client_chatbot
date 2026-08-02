@@ -46,6 +46,7 @@ def test_get_personality_detail_valid(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data['name'] == listing[0]['name']
+    assert isinstance(data['opening_lines'], list) and len(data['opening_lines']) > 0
 
 
 def test_get_personality_detail_not_found(client):
@@ -72,11 +73,11 @@ def test_source_files_are_not_served(client):
         assert response.status_code == 404, f'{path} should not be servable'
 
 
-def test_start_message_returns_a_message(client):
+def test_start_message_endpoint_removed(client):
+    # Opening lines are now embedded per-personality and picked client-side
+    # (see tests/test_personalities.py) rather than served from this route.
     response = client.get('/api/start-message')
-    assert response.status_code == 200
-    data = response.get_json()
-    assert isinstance(data['message'], str) and data['message']
+    assert response.status_code == 404
 
 
 def test_claude_proxy_no_data(client):

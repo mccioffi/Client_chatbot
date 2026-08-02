@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 import json
 import anthropic
-import random
 from decouple import config
 
 app = Flask(__name__, static_folder='static', static_url_path='')
@@ -91,39 +90,6 @@ def get_personality(personality_id):
 def get_config():
     """Get configuration settings including Claude model"""
     return jsonify({'model': CLAUDE_MODEL})
-
-@app.route('/api/start-message')
-def get_start_message():
-    """Get a randomly selected initial message"""
-
-    fallback_messages = ["Hello... I'm here because someone suggested I should talk to someone. I'm not really sure how this works.",
-                         "Hi. I was told this might help, though I'm honestly not sure about any of this.",
-                         "Hello. I'm here because I think I need to talk to someone about what I've been going through."
-                        ]
-    
-    try:
-        start_messages_path = os.path.join(os.path.dirname(__file__), 'start_messages.txt')
-        
-        if not os.path.exists(start_messages_path):
-            # Fallback messages if file doesn't exist
-            selected_message = random.choice(fallback_messages)
-            return jsonify({'message': selected_message})
-        
-        with open(start_messages_path, 'r', encoding='utf-8') as f:
-            messages = [line.strip() for line in f.readlines() if line.strip()]
-        
-        if not messages:
-            # Fallback if file is empty
-            fallback_message = fallback_messages[0]
-            return jsonify({'message': fallback_message})
-        
-        selected_message = random.choice(messages)
-        return jsonify({'message': selected_message})
-        
-    except Exception as e:
-        # Return fallback message on error
-        fallback_message = fallback_messages[0]
-        return jsonify({'message': fallback_message})
 
 @app.route('/api/claude', methods=['POST'])
 def claude_proxy():

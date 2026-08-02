@@ -128,20 +128,15 @@ class ChatBot {
         this.warningShown = false;
     }
 
-    async addInitialMessage() {
+    addInitialMessage() {
         if (!this.currentPersonality) return;
-        
-        try {
-            const response = await fetch('/api/start-message');
-            const data = await response.json();
-            const message = data.message || "Hello... I'm here because someone suggested I should talk to someone. I'm not really sure how this works.";
-            this.addMessage(message, 'bot');
-        } catch (error) {
-            console.error('Failed to load start message:', error);
-            // Fallback message if API fails
-            const fallbackMessage = "Hello... I'm here because someone suggested I should talk to someone. I'm not really sure how this works.";
-            this.addMessage(fallbackMessage, 'bot');
-        }
+
+        const openingLines = this.currentPersonality.opening_lines;
+        const message = openingLines && openingLines.length > 0
+            ? openingLines[Math.floor(Math.random() * openingLines.length)]
+            : "Hello... I'm here because someone suggested I should talk to someone. I'm not really sure how this works.";
+
+        this.addMessage(message, 'bot');
     }
 
     checkAccessCode() {
