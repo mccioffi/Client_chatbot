@@ -8,7 +8,7 @@ from decouple import config
 app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Claude API configuration
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = config('CLAUDE_MODEL', default='claude-sonnet-4-20250514')
 PERSONALITIES_DIR = "personalities"
 FLASK_DEBUG = config('FLASK_DEBUG', default=False, cast=bool)
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')

@@ -70,8 +70,9 @@ python app.py
 
 Open your browser and go to `http://localhost:8000`
 
-In production (Azure), set `ANTHROPIC_API_KEY`, `STUDENT_TOKENS`, and
-`FLASK_DEBUG` as App Service Application Settings instead of a `.env` file.
+In production (Azure), set `ANTHROPIC_API_KEY`, `STUDENT_TOKENS`,
+`FLASK_DEBUG`, and `CLAUDE_MODEL` as App Service Application Settings instead
+of a `.env` file.
 
 ### 3. Using the Application
 
