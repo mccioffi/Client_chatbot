@@ -41,6 +41,10 @@ jobs:
           path: |
             .
             !venv/
+            !.git/**
+            !.github/**
+            !.idea/**
+            !README.md
 
   deploy:
     runs-on: ubuntu-latest
